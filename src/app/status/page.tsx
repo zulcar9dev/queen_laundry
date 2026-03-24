@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useOrders, useRacks } from "@/hooks/useStore";
+import { useOrders } from "@/hooks/useStore";
 import { OrderCard } from "@/components/order-card";
 import { RackSelectorModal } from "@/components/rack-selector-modal";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { OrderStatus, STATUS_LABELS } from "@/lib/types";
-import { Search, Filter } from "lucide-react";
+import { Search, ListFilter, LayoutDashboard, History } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useRacks } from "@/hooks/useStore";
+import { OrderPreviewModal } from "@/components/order-preview-modal";
+import { Order } from "@/lib/types";
 
 const STATUS_ORDER: OrderStatus[] = [
   OrderStatus.TIMBANG_MASUK,
@@ -22,17 +25,34 @@ const STATUS_ORDER: OrderStatus[] = [
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
     case OrderStatus.TIMBANG_MASUK:
-      return "border-blue-300 bg-blue-100 text-blue-800";
+      return "bg-blue-50 text-blue-700";
     case OrderStatus.CUCI:
-      return "border-yellow-300 bg-yellow-100 text-yellow-800";
+      return "bg-cyan-50 text-cyan-700";
     case OrderStatus.SETRIKA:
-      return "border-purple-300 bg-purple-100 text-purple-800";
+      return "bg-orange-50 text-orange-700";
     case OrderStatus.PACKING:
-      return "border-orange-300 bg-orange-100 text-orange-800";
+      return "bg-purple-50 text-purple-700";
     case OrderStatus.SELESAI:
-      return "border-green-300 bg-green-100 text-green-800";
+      return "bg-green-50 text-green-700";
     default:
-      return "border-gray-300 bg-gray-100 text-gray-800";
+      return "bg-gray-50 text-gray-700";
+  }
+};
+
+const getStatusDot = (status: OrderStatus) => {
+  switch (status) {
+    case OrderStatus.TIMBANG_MASUK:
+      return "bg-blue-400";
+    case OrderStatus.CUCI:
+      return "bg-cyan-400";
+    case OrderStatus.SETRIKA:
+      return "bg-orange-400";
+    case OrderStatus.PACKING:
+      return "bg-purple-400";
+    case OrderStatus.SELESAI:
+      return "bg-green-400";
+    default:
+      return "bg-gray-400";
   }
 };
 
@@ -40,12 +60,20 @@ type FilterType = "all" | "today" | "search";
 
 export default function StatusPage() {
   const { orders, updateStatus } = useOrders();
-  const { racks, assignToRack } = useRacks();
+  const { assignToRack } = useRacks();
 
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [rackModalOpen, setRackModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewOrder, setPreviewOrder] = useState<Order | null>(null);
+
+  const handleCardClick = (order: Order) => {
+    setPreviewOrder(order);
+    setIsPreviewOpen(true);
+  };
 
   const filteredOrders = useMemo(() => {
     let result = [...orders];
@@ -107,16 +135,35 @@ export default function StatusPage() {
     }
   };
 
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-
   return (
-    <div className="min-h-screen">
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <h1 className="text-xl font-bold">Status Board</h1>
+    <div className="min-h-screen bg-[#f8fafc] pb-24">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-[#171c1f] uppercase tracking-tight">Tracking Board</h1>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Live order workflow manager</p>
+          </div>
+          <div className="hidden md:flex items-center gap-2 bg-[#f1f5f9] p-1 rounded-xl">
+             {(["all", "today"] as FilterType[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    "px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all",
+                    filter === f ? "bg-white text-[#171c1f] shadow-sm" : "text-muted-foreground hover:text-[#171c1f]"
+                  )}
+                >
+                  {f === "all" ? "All Orders" : "Today"}
+                </button>
+              ))}
+          </div>
         </div>
-        <div className="max-w-lg mx-auto px-4 pb-3">
-          <div className="flex gap-2">
+      </header>
+
+      {/* Search & Mobile Filters */}
+      <div className="px-6 py-4 bg-white border-b border-gray-100 md:hidden">
+         <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -125,92 +172,67 @@ export default function StatusPage() {
                   setSearchQuery(e.target.value);
                   setFilter("search");
                 }}
-                placeholder="Cari order..."
-                className="pl-9"
+                placeholder="Search orders..."
+                className="pl-9 h-12 bg-[#f8fafc] border-none rounded-xl text-sm font-medium"
               />
             </div>
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              {(["all", "today"] as FilterType[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-                    filter === f ? "bg-white shadow-sm" : "text-muted-foreground"
-                  )}
-                >
-                  {f === "all" ? "Semua" : "Hari Ini"}
-                </button>
-              ))}
-            </div>
+            <button className="h-12 w-12 flex items-center justify-center bg-[#f8fafc] rounded-xl text-muted-foreground">
+              <ListFilter className="h-5 w-5" />
+            </button>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-lg mx-auto p-4">
-        {isMobile ? (
-          <div className="space-y-6">
-            {STATUS_ORDER.map((status) => (
-              <div key={status} className={cn("rounded-xl p-3", getStatusColor(status).split(" ")[1])}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={cn("w-3 h-3 rounded-full", getStatusColor(status).split(" ")[0])} />
-                  <h2 className="font-bold text-gray-900">{STATUS_LABELS[status]}</h2>
-                  <Badge variant="outline" className="ml-auto border-gray-400 text-gray-700 bg-white">
-                    {ordersByStatus[status].length}
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  {ordersByStatus[status].map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      nextStatus={getNextStatus(status)}
-                      onStatusChange={handleStatusChange}
-                    />
-                  ))}
-                  {ordersByStatus[status].length === 0 && (
-                    <p className="text-center text-gray-500 py-4 text-sm bg-white/50 rounded-lg">
-                      Tidak ada order
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-5 gap-3">
-            {STATUS_ORDER.map((status) => (
-              <div key={status} className="space-y-3">
-                <div className={cn("rounded-lg p-2", getStatusColor(status))}>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className={cn("w-2.5 h-2.5 rounded-full", getStatusColor(status).split(" ")[0])} />
-                    <span className="font-bold text-sm">{STATUS_LABELS[status]}</span>
-                    <Badge variant="outline" className="border-current bg-white/50 text-inherit">
-                      {ordersByStatus[status].length}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-2 min-h-[200px]">
-                  {ordersByStatus[status].map((order) => (
-                    <OrderCard
-                      key={order.id}
-                      order={order}
-                      nextStatus={getNextStatus(status)}
-                      onStatusChange={handleStatusChange}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* Board Content */}
+      <main className="px-6 py-8 overflow-x-auto">
+        <div className="flex gap-6 min-w-max md:min-w-full">
+          {STATUS_ORDER.map((status) => (
+            <div key={status} className="w-80 flex flex-col gap-4">
+              {/* Column Header */}
+              <div className={cn("p-4 rounded-2xl flex items-center justify-between shadow-sm border border-white/50", getStatusColor(status))}>
+                <div className="flex items-center gap-2">
+                  <div className={cn("w-2.5 h-2.5 rounded-full shadow-sm animate-pulse", getStatusDot(status))} />
+                  <span className="text-[11px] font-black uppercase tracking-widest">{STATUS_LABELS[status]}</span>
+                </div>
+                <Badge variant="outline" className="border-none bg-white/50 text-[#171c1f] font-black text-[10px]">
+                  {ordersByStatus[status].length}
+                </Badge>
+              </div>
+
+              {/* Column Content */}
+              <div className="space-y-4">
+                {ordersByStatus[status].map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    nextStatus={getNextStatus(status)}
+                    onStatusChange={handleStatusChange}
+                    onCardClick={handleCardClick}
+                  />
+                ))}
+                
+                {ordersByStatus[status].length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 rounded-3xl border-2 border-dashed border-gray-200 bg-white/30">
+                    <History className="h-8 w-8 text-gray-300 mb-2" />
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">No orders here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
 
       <RackSelectorModal
         open={rackModalOpen}
         onOpenChange={setRackModalOpen}
         orderId={selectedOrderId || ""}
         onSelect={handleRackSelect}
+      />
+
+      <OrderPreviewModal 
+        order={previewOrder}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
       />
     </div>
   );

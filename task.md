@@ -6,14 +6,18 @@
 - [x] User review & approval
 
 ## Execution Phase (After Approval)
-- [/] Project scaffolding & setup
+- [x] Project scaffolding & setup
 - [ ] Database schema & backend API
-- [ ] Dashboard Kasir (Order Input UI)
-- [ ] Kanban Board (Status Tracker)
-- [ ] Rak/Storage Management
-- [ ] Polish & responsive optimization
-
-## Verification Phase
+- [x] Dashboard Kasir (Input Super Cepat - Responsive)
+    - [x] UI- [x] Dashboard Kasir UI (Azure Linen)
+- [x] Order Wizard UI (Azure Linen)
+- [x] Status Board UI (Azure Linen)
+- [x] Storage Management UI (Azure Linen)
+- [x] Refine Navigation Spacing (Floating Nav + Wizard Focus)
+- [x] Order Item Preview (Modal Azure Linen)
+- [ ] Order Tracking (Pelacakan Real-time)
+- [ ] Manajemen Inventori Sederhana (Rak & Posisi)e
 - [ ] Browser testing on mobile viewport
 - [ ] End-to-end flow validation
 - [ ] Create walkthrough
+```

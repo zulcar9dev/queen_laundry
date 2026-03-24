@@ -13,23 +13,24 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Rack, OrderStatus, STATUS_LABELS } from "@/lib/types";
-import { Search, Archive, User, Package } from "lucide-react";
+import { Search, Archive, User, Package, History, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
     case OrderStatus.TIMBANG_MASUK:
-      return "bg-blue-500";
+      return "bg-blue-400";
     case OrderStatus.CUCI:
-      return "bg-yellow-500";
+      return "bg-cyan-400";
     case OrderStatus.SETRIKA:
-      return "bg-purple-500";
+      return "bg-orange-400";
     case OrderStatus.PACKING:
-      return "bg-orange-500";
+      return "bg-purple-400";
     case OrderStatus.SELESAI:
-      return "bg-green-500";
+      return "bg-green-400";
     default:
-      return "bg-gray-500";
+      return "bg-gray-400";
   }
 };
 
@@ -76,145 +77,154 @@ export default function RacksPage() {
     }
   };
 
-  const gridCols = Math.ceil(Math.sqrt(racks.length));
-  const rows = Math.ceil(racks.length / gridCols);
-
   return (
-    <div className="min-h-screen">
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <Archive className="h-5 w-5" />
-            Manajemen Rak
-          </h1>
-        </div>
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold">{stats.total}</p>
-              <p className="text-xs text-muted-foreground">Total</p>
-            </div>
-            <div className="text-center p-3 bg-red-50 rounded-lg">
-              <p className="text-2xl font-bold text-red-600">{stats.occupied}</p>
-              <p className="text-xs text-muted-foreground">Terisi</p>
-            </div>
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">{stats.empty}</p>
-              <p className="text-xs text-muted-foreground">Kosong</p>
-            </div>
+    <div className="min-h-screen bg-[#f8fafc] pb-24">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-30 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-black text-[#171c1f] uppercase tracking-tight flex items-center gap-2">
+              <Archive className="h-6 w-6" />
+              Storage Management
+            </h1>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">Track and manage rack availability</p>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari nama pelanggan..."
-              className="pl-9"
-            />
+          
+          <div className="flex bg-[#f1f5f9] p-1 rounded-xl md:w-auto overflow-x-auto no-scrollbar">
+            <div className="flex items-center px-4 py-2 border-r border-gray-200">
+               <span className="text-xl font-black text-[#171c1f] leading-none">{stats.total}</span>
+               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-2">Total</span>
+            </div>
+            <div className="flex items-center px-4 py-2 border-r border-gray-200">
+               <span className="text-xl font-black text-blue-600 leading-none">{stats.empty}</span>
+               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-2">Free</span>
+            </div>
+            <div className="flex items-center px-4 py-2">
+               <span className="text-xl font-black text-purple-600 leading-none">{stats.occupied}</span>
+               <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground ml-2">Used</span>
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-lg mx-auto p-4">
-        <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}
-        >
-          {Array.from({ length: rows * gridCols }).map((_, index) => {
-            const rack = filteredRacks[index];
-            if (!rack) return <div key={index} />;
+      {/* Search */}
+      <div className="px-6 py-6 max-w-7xl mx-auto">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-[#171c1f]" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by customer name or order ID..."
+            className="pl-12 h-14 bg-white border-none shadow-ambient rounded-2xl text-base font-medium transition-all focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+      </div>
 
+      {/* Grid Content */}
+      <main className="px-6 py-4 max-w-7xl mx-auto">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+          {racks.map((rack) => {
             const order = getRackOrder(rack);
             const isEmpty = rack.isEmpty;
-            const isHighlighted = searchQuery && order;
+            const isHighlighted = searchQuery && order && (
+              order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase())
+            );
 
             return (
               <button
                 key={rack.id}
                 onClick={() => !isEmpty && setSelectedRack(rack)}
                 className={cn(
-                  "aspect-square rounded-xl border-2 flex flex-col items-center justify-center p-2 transition-all touch-target-md",
+                  "aspect-square rounded-3xl border-none flex flex-col items-center justify-center p-2 transition-all active:scale-95 shadow-ambient",
                   isEmpty
-                    ? "border-green-200 bg-green-50 hover:bg-green-100"
-                    : "border-gray-200 bg-white shadow-sm",
-                  isHighlighted && "ring-2 ring-primary ring-offset-2"
+                    ? "bg-white text-blue-600 hover:bg-blue-50"
+                    : "bg-[#171c1f] text-white shadow-lg",
+                  isHighlighted && "ring-4 ring-blue-400 ring-offset-4 scale-105 z-10"
                 )}
               >
-                <span className="text-lg font-bold">
+                <span className="text-2xl font-black uppercase leading-none">
                   {String.fromCharCode(65 + rack.row)}
                   {rack.col + 1}
                 </span>
                 {!isEmpty && order && (
-                  <div
-                    className={cn("w-3 h-3 rounded-full mt-1", getStatusColor(order.status))}
-                  />
+                  <div className={cn("w-2.5 h-2.5 rounded-full mt-2 shadow-sm animate-pulse", getStatusColor(order.status))} />
                 )}
                 {isEmpty && (
-                  <span className="text-xs text-green-600 mt-1">Kosong</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest mt-1 opacity-50">Empty</span>
                 )}
               </button>
             );
           })}
         </div>
-      </div>
+      </main>
 
+      {/* Detail Dialog */}
       <Dialog open={!!selectedRack} onOpenChange={() => setSelectedRack(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] sm:max-w-md rounded-[2.5rem] p-8 border-none shadow-2xl">
           {selectedRack && (() => {
             const order = getRackOrder(selectedRack);
             if (!order) return null;
 
             return (
               <>
-                <DialogHeader>
-                  <DialogTitle>
-                    Rak {String.fromCharCode(65 + selectedRack.row)}
-                    {selectedRack.col + 1}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div
-                      className={cn(
-                        "w-2 h-2 rounded-full",
-                        getStatusColor(order.status)
-                      )}
-                    />
-                    <Badge variant="secondary">
-                      {STATUS_LABELS[order.status]}
-                    </Badge>
-                    <span className="font-mono text-sm ml-auto">
-                      {order.orderNumber}
-                    </span>
+                <DialogHeader className="mb-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-14 w-14 rounded-2xl bg-[#171c1f] text-white flex items-center justify-center text-2xl font-black uppercase">
+                       {String.fromCharCode(65 + selectedRack.row)}{selectedRack.col + 1}
+                    </div>
+                    <div>
+                      <DialogTitle className="text-xl font-black text-[#171c1f] uppercase tracking-tight">Rack Details</DialogTitle>
+                      <Badge variant="outline" className={cn("border-none px-2 py-0.5 font-bold text-[10px] uppercase tracking-widest mt-1", 
+                        order.status === OrderStatus.PACKING ? "bg-purple-100 text-purple-700" : "bg-green-100 text-green-700")}>
+                        {STATUS_LABELS[order.status]}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.customerName}</span>
+                </DialogHeader>
+
+                <div className="space-y-6">
+                  <div className="p-5 bg-[#f8fafc] rounded-3xl space-y-4">
+                    <div className="flex items-center gap-4">
+                       <div className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary">
+                          <User className="h-5 w-5" />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Customer</p>
+                          <p className="font-bold text-lg text-[#171c1f] leading-tight">{order.customerName}</p>
+                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Package className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {order.totalWeight} kg · {order.totalPcs} pcs
-                      </span>
+
+                    <div className="flex items-center gap-4">
+                       <div className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-primary">
+                          <Package className="h-5 w-5" />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Order Summary</p>
+                          <p className="font-bold text-[#171c1f] leading-tight">
+                             {order.totalWeight} kg · {order.totalPcs} pcs
+                          </p>
+                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      variant="success"
+                      onClick={handleMarkTaken}
+                      className="h-14 rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-lg active:scale-95 bg-green-600 hover:bg-green-700 transition-all"
+                    >
+                      Release & Mark Done
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setSelectedRack(null)}
+                      className="h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest text-muted-foreground"
+                    >
+                      Cancel
+                    </Button>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedRack(null)}
-                  >
-                    Tutup
-                  </Button>
-                  <Button
-                    variant="success"
-                    onClick={handleMarkTaken}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Tandai Diambil
-                  </Button>
-                </DialogFooter>
               </>
             );
           })()}

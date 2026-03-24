@@ -85,6 +85,24 @@ Build a touch-optimized web application for UMKM laundry management with fast or
 
 ---
 
+### Order Preview System
+
+#### [NEW] [src/components/order-preview-modal.tsx](file:///c:/Users/zulka/Documents/My%20Project/queen_laundry/src/components/order-preview-modal.tsx)
+- **Visual Design (Azure Linen)**:
+  - Base: `Dialog` component with `rounded-[2.5rem]` and `glassmorphism`.
+  - Header: Large customer name with WhatsApp quick-link icon.
+  - Body:
+    - **Physical Items**: Scrolling list of items (e.g., "5x T-Shirt") with custom icons.
+    - **Order Stats**: Weight and estimated finished time in premium cards.
+    - **Status Progress**: Visual tracker showing the order's journey.
+  - Footer: Action bar with "Print Receipt" and "Close" buttons.
+
+#### [MODIFY] [src/components/order-card.tsx](file:///c:/Users/zulka/Documents/My%20Project/queen_laundry/src/components/order-card.tsx)
+- **Feature**: Click-to-preview integration.
+- Ensure only clicks on the card body (not status buttons) trigger the modal.
+
+---
+
 ### Page: Dashboard (Order Input)
 
 #### [NEW] [src/app/page.tsx](file:///c:/Users/zulka/Documents/My%20Project/queen_laundry/src/app/page.tsx)
@@ -132,8 +150,9 @@ Build a touch-optimized web application for UMKM laundry management with fast or
 | 4 | App shell (layout, bottom nav) | `layout.tsx`, `bottom-nav.tsx` |
 | 5 | Dashboard + Order Form | `page.tsx`, `order/page.tsx` |
 | 6 | Status Board (Kanban) | `status/page.tsx`, `order-card.tsx` |
-| 7 | Rack Management | `racks/page.tsx`, `rack-selector-modal.tsx` |
-| 8 | Polish (animations, responsive, edge cases) | All files |
+| 7 | Order Item Preview | `order-preview-modal.tsx`, `order-card.tsx`, `page.tsx` |
+| 8 | Rack Management | `racks/page.tsx`, `rack-selector-modal.tsx` |
+| 9 | Polish (animations, responsive, edge cases) | All files |
 
 ## Verification Plan
 

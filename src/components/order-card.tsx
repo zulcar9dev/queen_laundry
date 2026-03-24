@@ -2,15 +2,15 @@
 
 import { Order, STATUS_LABELS, OrderStatus } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { Clock, ChevronRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const statusColors: Record<OrderStatus, { bg: string; border: string; badge: string; dot: string }> = {
-  [OrderStatus.TIMBANG_MASUK]: { bg: "bg-blue-50", border: "border-blue-200", badge: "bg-blue-100 text-blue-800", dot: "bg-blue-500" },
-  [OrderStatus.CUCI]: { bg: "bg-yellow-50", border: "border-yellow-200", badge: "bg-yellow-100 text-yellow-800", dot: "bg-yellow-500" },
-  [OrderStatus.SETRIKA]: { bg: "bg-purple-50", border: "border-purple-200", badge: "bg-purple-100 text-purple-800", dot: "bg-purple-500" },
-  [OrderStatus.PACKING]: { bg: "bg-orange-50", border: "border-orange-200", badge: "bg-orange-100 text-orange-800", dot: "bg-orange-500" },
-  [OrderStatus.SELESAI]: { bg: "bg-green-50", border: "border-green-200", badge: "bg-green-100 text-green-800", dot: "bg-green-500" },
+const statusColors: Record<OrderStatus, string> = {
+  [OrderStatus.TIMBANG_MASUK]: "bg-blue-100 text-blue-700 border-blue-200",
+  [OrderStatus.CUCI]: "bg-cyan-100 text-cyan-700 border-cyan-200",
+  [OrderStatus.SETRIKA]: "bg-orange-100 text-orange-700 border-orange-200",
+  [OrderStatus.PACKING]: "bg-purple-100 text-purple-700 border-purple-200",
+  [OrderStatus.SELESAI]: "bg-green-100 text-green-700 border-green-200",
 };
 
 interface OrderCardProps {
@@ -18,6 +18,7 @@ interface OrderCardProps {
   onStatusChange?: (orderId: string, newStatus: OrderStatus) => void;
   showStatusButton?: boolean;
   nextStatus?: OrderStatus;
+  onCardClick?: (order: Order) => void;
 }
 
 export function OrderCard({
@@ -25,9 +26,8 @@ export function OrderCard({
   onStatusChange,
   showStatusButton = true,
   nextStatus,
+  onCardClick,
 }: OrderCardProps) {
-  const colors = statusColors[order.status];
-
   const getRelativeTime = (dateStr: string) => {
     const now = new Date();
     const date = new Date(dateStr);
@@ -36,54 +36,60 @@ export function OrderCard({
     
     if (diffMins < 60) return `${diffMins}m ago`;
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}j ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
     return `${Math.floor(diffHours / 24)}d ago`;
   };
 
   return (
-    <div
-      className={cn(
-        "bg-white rounded-lg border-2 p-3 shadow-sm",
-        colors.border
-      )}
+    <div 
+      className="bg-white rounded-2xl shadow-ambient border-none overflow-hidden hover:shadow-md transition-all active:scale-[0.99] cursor-pointer"
+      onClick={() => onCardClick?.(order)}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", colors.dot)} />
-          <div className="min-w-0">
-            <p className="font-semibold text-gray-900 truncate">{order.customerName}</p>
-            <p className="text-xs font-mono text-gray-500">
-              {order.orderNumber}
-            </p>
+      <div className="p-4 space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-primary">
+              <User className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-bold text-[#171c1f] leading-tight">{order.customerName}</p>
+              <p className="text-[10px] font-mono text-muted-foreground font-bold mt-0.5 uppercase tracking-tighter">
+                {order.orderNumber}
+              </p>
+            </div>
+          </div>
+          <Badge variant="outline" className={cn("px-2 py-0.5 rounded-full border-none font-black text-[9px] uppercase tracking-widest", statusColors[order.status])}>
+            {STATUS_LABELS[order.status]}
+          </Badge>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex flex-col">
+            <span className="text-xs font-bold text-[#171c1f]">
+              {order.totalWeight} <span className="text-muted-foreground font-medium">kg</span>
+            </span>
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">
+               {order.totalPcs} Pcs
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-muted-foreground bg-gray-50 px-2 py-1 rounded-lg">
+            <Clock className="h-3 w-3" />
+            <span className="text-[10px] font-bold uppercase tracking-tighter">{getRelativeTime(order.createdAt)}</span>
           </div>
         </div>
-        <Badge className={cn("text-xs shrink-0", colors.badge)}>
-          {STATUS_LABELS[order.status]}
-        </Badge>
-      </div>
 
-      <div className="mt-3 flex items-center justify-between text-sm">
-        <span className="text-gray-600 font-medium">
-          {order.totalWeight} kg · {order.totalPcs} pcs
-        </span>
-        <div className="flex items-center gap-1 text-gray-500">
-          <Clock className="h-3.5 w-3.5" />
-          <span className="text-xs">{getRelativeTime(order.createdAt)}</span>
-        </div>
+        {showStatusButton && nextStatus && onStatusChange && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onStatusChange(order.id, nextStatus);
+            }}
+            className="w-full mt-2 h-12 text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2 bg-gray-900 text-white hover:bg-[#171c1f]"
+          >
+            Move to {STATUS_LABELS[nextStatus]} <ChevronRight className="h-4 w-4" strokeWidth={3} />
+          </button>
+        )}
       </div>
-
-      {showStatusButton && nextStatus && onStatusChange && (
-        <button
-          onClick={() => onStatusChange(order.id, nextStatus)}
-          className={cn(
-            "w-full mt-3 py-2.5 text-sm font-semibold rounded-md transition-colors",
-            "bg-gray-900 text-white hover:bg-gray-800",
-            "touch-target-md flex items-center justify-center gap-1"
-          )}
-        >
-          Pindah ke {STATUS_LABELS[nextStatus]} →
-        </button>
-      )}
     </div>
   );
 }
