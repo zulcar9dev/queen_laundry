@@ -14,8 +14,8 @@ const navItems = [
 export function BottomNav() {
   const pathname = usePathname();
   
-  // Hide bottom nav on order creation page to focus user attention
-  if (pathname === "/order") return null;
+  // Hide bottom nav on order creation page and login page to focus user attention
+  if (pathname === "/order" || pathname === "/login") return null;
 
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-white/70 backdrop-blur-2xl rounded-[2.5rem] border border-white/40 shadow-ambient flex items-center gap-10 transition-all duration-500 hover:shadow-xl hover:bg-white/80">
